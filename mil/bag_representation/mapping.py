@@ -177,17 +177,21 @@ class DiscriminativeMapping(MILESBase):
         X : array-like containing all the training bags, with shape [bags, instances, features]
         y : optional. array-like containing the labels of the bags X.
         """
-        label = np.where(y==0, -1, y)
-        
+        label = np.where(y == 0, -1, y)
+
         # get instances-bag similarity
         m = MILESMapping()
+        # this is SUPPOSED TO BE Kp, which gives distances between 2 bags
         ins_bag = m.fit_transform(X).T
         
         # calculate Q
         Y = np.array([i * j for i in label for j in label]).reshape(len(label), len(label))
         B, A = np.unique(Y, return_counts=True)[1]
-        Q = np.where(Y==-1, -1/A, 1/B)
-        
+
+        # they switched A and B values. A corresponds to matches and should be positive. B corresponds to non-matches and should be negative
+        Q = np.where(Y == 1, 1 / A, -1 / B)
+        # Q = np.where(Y==-1, -1/A, 1/B)
+
         # calculate J
         J = np.sum(ins_bag @ Q, axis=1)
         
@@ -197,4 +201,25 @@ class DiscriminativeMapping(MILESBase):
         # select dip
         self.iip_ = np.array(bags2instances(X))[self.items_]
 
-        
+    def transform(self, X):
+        """
+        Gets the minimum distance between each bag-point pair
+        """
+        dists = np.zeros((len(X), len(self.iip_)))
+        for i, bag in enumerate(X):
+            for j, p in enumerate(self.iip_):
+                # calculate minimum distance between bag and point
+                dists[i][j] = min([self.calc_distance(bag_pnt, p) for bag_pnt in bag])
+        return dists
+
+
+def calc_distance(self, A, B):
+    """
+    Calculates euclidean distance between 2 n-dimensional points
+    """
+    dist = 0
+    for i in range(len(A)):
+        dist += (A[i] - B[i])**2
+    dist = dist**0.5
+    return dist
+
