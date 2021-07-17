@@ -149,7 +149,7 @@ class DiscriminativeMapping(MILESBase):
     Multi-instance Learning with Discriminative Bag Mapping (Wu et al.)
     http://www.cse.fau.edu/~xqzhu/papers/TKDE.Wu.2017.Multiinstance.pdf
     """
-    def __init__(self, m=2, sigma2=8e5):
+    def __init__(self, m=2, sigma2=8e5, distance_metric="MILES"):
         """
         Parameters
         ----------
@@ -158,6 +158,7 @@ class DiscriminativeMapping(MILESBase):
         """
         super(DiscriminativeMapping, self).__init__(sigma2)
         self.m = m
+        self.distance_metric = distance_metric
     
     def fit(self, X, y):
         """
@@ -198,4 +199,31 @@ class DiscriminativeMapping(MILESBase):
         # select dip
         self.iip_ = np.array(bags2instances(X))[self.items_]
 
-        
+    def transform(self, X):
+        """
+        Gets the minimum distance between each bag-point pair.
+
+        """
+        if self.distance_metric == "MILES":
+            return super(DiscriminativeMapping, self).transform(X)
+        elif self.distance_metric == "HAUSDORF":
+            dists = np.zeros((len(X), len(self.iip_)))
+            for i, bag in enumerate(X):
+                for j, p in enumerate(self.iip_):
+                    # calculate minimum distance between bag and point
+                    dists[i][j] = min([calc_distance(bag_pnt, p) for bag_pnt in bag])
+            return dists
+        else:
+            return None
+
+
+def calc_distance(A, B):
+    """
+    Calculates euclidean distance between 2 n-dimensional points
+    """
+    dist = 0
+    for i in range(len(A)):
+        dist += (A[i] - B[i])**2
+    dist = dist**0.5
+    return dist
+
