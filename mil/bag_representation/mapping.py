@@ -186,8 +186,9 @@ class DiscriminativeMapping(MILESBase):
         # calculate Q
         Y = np.array([i * j for i in label for j in label]).reshape(len(label), len(label))
         B, A = np.unique(Y, return_counts=True)[1]
-        Q = np.where(Y==-1, -1/A, 1/B)
-        
+
+        Q = np.where(Y == 1, -1 / A, 1 / B)
+
         # calculate J
         J = np.sum(ins_bag @ Q, axis=1)
         
